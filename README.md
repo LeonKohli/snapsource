@@ -43,6 +43,10 @@ None at this time.
 
 ## Release Notes
 
+### 1.0.1
+
+- lowered minimum code version
+
 ### 1.0.0
 
 - Initial release of SnapSource

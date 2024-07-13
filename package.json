@@ -2,10 +2,10 @@
   "name": "snapsource",
   "displayName": "SnapSource",
   "description": "Easily copy file and folder contents with project tree structure to clipboard for LLM context, with multiple output formats",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "LeonKohli",
   "engines": {
-    "vscode": "^1.91.0"
+    "vscode": "^1.89.x"
   },
   "categories": [
     "Other"
@@ -21,7 +21,7 @@
   ],
   "icon": "images/icon.png",
   "galleryBanner": {
-    "color": "#C80000",
+    "color": "#092032",
     "theme": "dark"
   },
   "activationEvents": [
@@ -59,12 +59,18 @@
         },
         "snapsource.excludePatterns": {
           "type": "array",
-          "default": ["node_modules", "*.log"],
+          "default": [
+            "node_modules",
+            "*.log"
+          ],
           "description": "Additional patterns to exclude from the project tree and file copying (dot files are always ignored)"
         },
         "snapsource.outputFormat": {
           "type": "string",
-          "enum": ["plaintext", "markdown"],
+          "enum": [
+            "plaintext",
+            "markdown"
+          ],
           "default": "plaintext",
           "description": "Output format for the copied content"
         }
@@ -74,21 +80,21 @@
   "scripts": {
     "lint": "eslint .",
     "pretest": "npm run lint",
-    "test": "node ./test/runTest.js",
-    "vscode:prepublish": "npm run lint"
+    "test": "node ./test/runTest.js"
   },
   "devDependencies": {
-    "@types/vscode": "^1.91.0",
     "@types/glob": "^7.1.3",
     "@types/mocha": "^10.0.7",
     "@types/node": "20.x",
+    "@vscode/test-electron": "^2.3.8",
     "eslint": "^8.57.0",
     "glob": "^7.1.6",
     "mocha": "^10.3.0",
-    "typescript": "^5.4.5",
-    "vscode-test": "^1.5.2"
+    "typescript": "^5.4.5"
   },
   "dependencies": {
+    "@types/vscode": "^1.89.0",
+    "@vscode/test-cli": "^0.0.10",
     "ignore": "^5.3.1"
   },
   "repository": {
