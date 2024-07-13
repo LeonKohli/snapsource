@@ -1,0 +1,102 @@
+{
+  "name": "snapsource",
+  "displayName": "SnapSource",
+  "description": "Easily copy file and folder contents with project tree structure to clipboard for LLM context, with multiple output formats",
+  "version": "1.0.0",
+  "publisher": "LeonKohli",
+  "engines": {
+    "vscode": "^1.91.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "clipboard",
+    "project structure",
+    "file content",
+    "LLM",
+    "code sharing",
+    "tree view",
+    "markdown"
+  ],
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#C80000",
+    "theme": "dark"
+  },
+  "activationEvents": [
+    "onCommand:snapsource.copyToClipboard"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "snapsource.copyToClipboard",
+        "title": "Copy to Clipboard (SnapSource)"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "snapsource.copyToClipboard",
+          "group": "navigation",
+          "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "SnapSource",
+      "properties": {
+        "snapsource.ignoreGitIgnore": {
+          "type": "boolean",
+          "default": true,
+          "description": "Respect .gitignore rules when generating the project tree and copying files"
+        },
+        "snapsource.maxDepth": {
+          "type": "number",
+          "default": 5,
+          "description": "Maximum depth of the project tree"
+        },
+        "snapsource.excludePatterns": {
+          "type": "array",
+          "default": ["node_modules", "*.log"],
+          "description": "Additional patterns to exclude from the project tree and file copying (dot files are always ignored)"
+        },
+        "snapsource.outputFormat": {
+          "type": "string",
+          "enum": ["plaintext", "markdown"],
+          "default": "plaintext",
+          "description": "Output format for the copied content"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "npm run lint",
+    "test": "node ./test/runTest.js",
+    "vscode:prepublish": "npm run lint"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.91.0",
+    "@types/glob": "^7.1.3",
+    "@types/mocha": "^10.0.7",
+    "@types/node": "20.x",
+    "eslint": "^8.57.0",
+    "glob": "^7.1.6",
+    "mocha": "^10.3.0",
+    "typescript": "^5.4.5",
+    "vscode-test": "^1.5.2"
+  },
+  "dependencies": {
+    "ignore": "^5.3.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LeonKohli/snapsource.git"
+  },
+  "bugs": {
+    "url": "https://github.com/LeonKohli/snapsource/issues"
+  },
+  "license": "MIT"
+}
