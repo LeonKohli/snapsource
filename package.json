@@ -2,10 +2,13 @@
   "name": "snapsource",
   "displayName": "SnapSource",
   "description": "Easily copy file and folder contents with project tree structure to clipboard for LLM context, with multiple output formats",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "publisher": "LeonKohli",
+  "author": {
+    "name": "Leon Kohli"
+  },
   "engines": {
-    "vscode": "^1.89.x"
+    "vscode": "^1.89.0"
   },
   "categories": [
     "Other"
@@ -17,16 +20,26 @@
     "LLM",
     "code sharing",
     "tree view",
-    "markdown"
+    "markdown",
+    "copy"
   ],
   "icon": "images/icon.png",
   "galleryBanner": {
     "color": "#092032",
     "theme": "dark"
   },
+  "badges": [
+    {
+      "url": "https://img.shields.io/visual-studio-marketplace/v/LeonKohli.snapsource.svg",
+      "href": "https://marketplace.visualstudio.com/items?itemName=LeonKohli.snapsource",
+      "description": "VS Code Marketplace Version"
+    }
+  ],
+  "preview": false,
+  "pricing": "Free",
   "activationEvents": [
     "onCommand:snapsource.copyToClipboard"
-  ],
+  ],  
   "main": "./extension.js",
   "contributes": {
     "commands": [
@@ -36,11 +49,24 @@
       }
     ],
     "menus": {
+      "commandPalette": [
+        {
+          "command": "snapsource.copyToClipboard",
+          "when": "false"
+        }
+      ],
       "explorer/context": [
         {
           "command": "snapsource.copyToClipboard",
-          "group": "navigation",
+          "group": "7_modification",
           "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "snapsource.copyToClipboard",
+          "group": "1_modification",
+          "when": "editorFocus"
         }
       ]
     },
@@ -73,11 +99,17 @@
           ],
           "default": "plaintext",
           "description": "Output format for the copied content"
+        },
+        "snapsource.maxFileSize": {
+          "type": "number",
+          "default": 1048576,
+          "description": "Maximum file size (in bytes) to include in the output. Default is 1MB (1048576 bytes)."
         }
       }
     }
   },
   "scripts": {
+    "vscode:prepublish": "npm run lint",
     "lint": "eslint .",
     "pretest": "npm run lint",
     "test": "node ./test/runTest.js"
@@ -95,7 +127,8 @@
   "dependencies": {
     "@types/vscode": "^1.89.0",
     "@vscode/test-cli": "^0.0.10",
-    "ignore": "^5.3.1"
+    "ignore": "^5.3.1",
+    "isbinaryfile": "^5.0.0"
   },
   "repository": {
     "type": "git",
@@ -104,5 +137,6 @@
   "bugs": {
     "url": "https://github.com/LeonKohli/snapsource/issues"
   },
-  "license": "MIT"
+  "homepage": "https://github.com/LeonKohli/snapsource#readme",
+  "license": "SEE LICENSE IN LICENSE"
 }
