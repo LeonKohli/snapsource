@@ -12,12 +12,11 @@ function activate(context) {
             const maxDepth = config.get('maxDepth');
             const excludePatterns = config.get('excludePatterns');
             const outputFormat = config.get('outputFormat');
-            const maxFileSize = config.get('maxFileSize', 1024 * 1024); // Default to 1MB
-            const includeProjectTree = config.get('includeProjectTree', true);
-            const compressCode = config.get('compressCode', false);
-            const removeComments = config.get('removeComments', false);
+            const maxFileSize = config.get('maxFileSize') || 1024 * 1024; // Default to 1MB
+            const includeProjectTree = config.get('includeProjectTree') || true;
+            const compressCode = config.get('compressCode') || false;
+            const removeComments = config.get('removeComments') || false;
 
-            // If multiple items are selected, use those. Otherwise, use the single item.
             const itemsToProcess = uris && uris.length > 0 ? uris : [uri];
 
             if (itemsToProcess.length > 0) {
@@ -39,7 +38,7 @@ function activate(context) {
                     for (const item of itemsToProcess) {
                         const stats = await fs.stat(item.fsPath);
                         if (stats.isDirectory()) {
-                            processedContent.push(...await processDirectory(item.fsPath, workspaceFolder.uri.fsPath, ig, maxFileSize));
+                            processedContent.push(...await processDirectory(item.fsPath, workspaceFolder.uri.fsPath, ig, maxFileSize, compressCode, removeComments));
                         } else {
                             const fileContent = await processFile(item.fsPath, workspaceFolder.uri.fsPath, ig, maxFileSize, compressCode, removeComments);
                             if (fileContent) processedContent.push(fileContent);
@@ -69,7 +68,6 @@ async function addGitIgnoreRules(rootPath, ig) {
         const gitIgnoreContent = await fs.readFile(gitIgnorePath, 'utf8');
         ig.add(gitIgnoreContent);
     } catch (error) {
-        // .gitignore file doesn't exist or can't be read, continue without it
         console.log('.gitignore not found or not readable:', error.message);
     }
 }
@@ -103,7 +101,7 @@ async function getProjectTree(dir, ig, maxDepth, currentDepth = 0, prefix = '') 
     return result;
 }
 
-async function processDirectory(dirPath, rootPath, ig, maxFileSize) {
+async function processDirectory(dirPath, rootPath, ig, maxFileSize, compressCode, removeComments) {
     let content = [];
     try {
         const files = await fs.readdir(dirPath);
@@ -115,7 +113,7 @@ async function processDirectory(dirPath, rootPath, ig, maxFileSize) {
 
             const stats = await fs.stat(filePath);
             if (stats.isDirectory()) {
-                content.push(...await processDirectory(filePath, rootPath, ig, maxFileSize));
+                content.push(...await processDirectory(filePath, rootPath, ig, maxFileSize, compressCode, removeComments));
             } else {
                 const fileContent = await processFile(filePath, rootPath, ig, maxFileSize, compressCode, removeComments);
                 if (fileContent) content.push(fileContent);
@@ -180,12 +178,10 @@ function processContent(content, removeComments, compressCode) {
 }
 
 function removeCodeComments(content) {
-    // Remove single-line and multi-line comments
     return content.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '');
 }
 
 function compressCodeContent(content) {
-    // Simple compression: remove extra whitespace and empty lines
     return content
         .split('\n')
         .map(line => line.trim())
