@@ -2,7 +2,7 @@
   "name": "snapsource",
   "displayName": "SnapSource",
   "description": "Easily copy file and folder contents with project tree structure to clipboard for LLM context, with multiple output formats",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "publisher": "LeonKohli",
   "author": {
     "name": "Leon Kohli"
@@ -21,7 +21,9 @@
     "code sharing",
     "tree view",
     "markdown",
-    "copy"
+    "copy",
+    "compress",
+    "remove comments"
   ],
   "icon": "images/icon.png",
   "galleryBanner": {
@@ -109,6 +111,16 @@
           "type": "boolean",
           "default": true,
           "description": "Include the project tree structure in the output"
+        },
+        "snapsource.compressCode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Remove extra whitespace and empty lines from code when copying"
+        },
+        "snapsource.removeComments": {
+          "type": "boolean",
+          "default": false,
+          "description": "Remove comments from code when copying"
         }
       }
     }

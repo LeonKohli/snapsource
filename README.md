@@ -16,6 +16,8 @@ SnapSource is a powerful Visual Studio Code extension that allows you to easily 
 - 🧠 Smart binary file detection to exclude non-text content.
 - 📏 Configurable file size limit to prevent oversized outputs.
 - 🔧 Option to include or exclude project tree structure in the output.
+- 🗜️ Simple code compression option for more compact output.
+- 🧹 Option to remove comments from code.
 
 ## 🔧 How to Use
 
@@ -36,6 +38,8 @@ This extension contributes the following settings:
 | `snapsource.outputFormat` | Output format for the copied content (options: "plaintext", "markdown") | `"plaintext"` |
 | `snapsource.maxFileSize` | Maximum file size (in bytes) to include in the output | `1048576` (1MB) |
 | `snapsource.includeProjectTree` | Include the project tree structure in the output | `true` |
+| `snapsource.compressCode` | Remove extra whitespace and empty lines from code when copying | `false` |
+| `snapsource.removeComments` | Remove comments from code when copying | `false` |
 
 > **Note:** Dot files are always ignored, and binary files are automatically detected and excluded.
 
@@ -54,10 +58,13 @@ None at this time.
 
 ## 📝 Release Notes
 
-### 1.0.3
+### 1.0.4
 
-- Added new setting `snapsource.includeProjectTree` to optionally disable project tree generation
-- Updated output formatting to respect the new setting
+### Changed
+- Implement `compressCode`
+- Implemented a simpler code compression feature that removes extra whitespace and empty lines
+- Updated file processing to use the new compression method
+- Improved comment removal functionality
 
 For a full list of changes, please see the [CHANGELOG.md](CHANGELOG.md) file.
 

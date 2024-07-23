@@ -2,12 +2,20 @@
 
 All notable changes to the "SnapSource" extension will be documented in this file.
 
-## [1.0.3] - 2024-07-15
+## [1.0.4] - 2024-07-23
+
+### Changed
+- Implement `compressCode`
+- Implemented a simpler code compression feature that removes extra whitespace and empty lines
+- Updated file processing to use the new compression method
+- Improved comment removal functionality
+
+
+## [1.0.3] - 2024-07-23
 
 ### Added
 - New setting `snapsource.includeProjectTree` to optionally disable project tree generation
 - Updated output formatting to respect the new setting
-
 
 ## [1.0.2] - 2024-07-14
 

@@ -13,7 +13,9 @@ function activate(context) {
             const excludePatterns = config.get('excludePatterns');
             const outputFormat = config.get('outputFormat');
             const maxFileSize = config.get('maxFileSize', 1024 * 1024); // Default to 1MB
-            const includeProjectTree = config.get('includeProjectTree', true); // New setting
+            const includeProjectTree = config.get('includeProjectTree', true);
+            const compressCode = config.get('compressCode', false);
+            const removeComments = config.get('removeComments', false);
 
             // If multiple items are selected, use those. Otherwise, use the single item.
             const itemsToProcess = uris && uris.length > 0 ? uris : [uri];
@@ -39,7 +41,7 @@ function activate(context) {
                         if (stats.isDirectory()) {
                             processedContent.push(...await processDirectory(item.fsPath, workspaceFolder.uri.fsPath, ig, maxFileSize));
                         } else {
-                            const fileContent = await processFile(item.fsPath, workspaceFolder.uri.fsPath, ig, maxFileSize);
+                            const fileContent = await processFile(item.fsPath, workspaceFolder.uri.fsPath, ig, maxFileSize, compressCode, removeComments);
                             if (fileContent) processedContent.push(fileContent);
                         }
                     }
@@ -115,7 +117,7 @@ async function processDirectory(dirPath, rootPath, ig, maxFileSize) {
             if (stats.isDirectory()) {
                 content.push(...await processDirectory(filePath, rootPath, ig, maxFileSize));
             } else {
-                const fileContent = await processFile(filePath, rootPath, ig, maxFileSize);
+                const fileContent = await processFile(filePath, rootPath, ig, maxFileSize, compressCode, removeComments);
                 if (fileContent) content.push(fileContent);
             }
         }
@@ -125,7 +127,7 @@ async function processDirectory(dirPath, rootPath, ig, maxFileSize) {
     return content;
 }
 
-async function processFile(filePath, rootPath, ig, maxFileSize) {
+async function processFile(filePath, rootPath, ig, maxFileSize, compressCode, removeComments) {
     const relativePath = path.relative(rootPath, filePath);
     if (ig.ignores(relativePath)) return null;
 
@@ -146,7 +148,12 @@ async function processFile(filePath, rootPath, ig, maxFileSize) {
             };
         }
 
-        const fileContent = await fs.readFile(filePath, 'utf8');
+        let fileContent = await fs.readFile(filePath, 'utf8');
+
+        if (removeComments || compressCode) {
+            fileContent = processContent(fileContent, removeComments, compressCode);
+        }
+
         return {
             path: relativePath,
             content: fileContent
@@ -158,6 +165,32 @@ async function processFile(filePath, rootPath, ig, maxFileSize) {
             content: `[Error reading file: ${error.message}]`
         };
     }
+}
+
+function processContent(content, removeComments, compressCode) {
+    if (removeComments) {
+        content = removeCodeComments(content);
+    }
+    
+    if (compressCode) {
+        content = compressCodeContent(content);
+    }
+    
+    return content;
+}
+
+function removeCodeComments(content) {
+    // Remove single-line and multi-line comments
+    return content.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '');
+}
+
+function compressCodeContent(content) {
+    // Simple compression: remove extra whitespace and empty lines
+    return content
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line !== '')
+        .join('\n');
 }
 
 function formatOutput(format, projectTree, content) {
