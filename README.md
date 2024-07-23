@@ -58,13 +58,15 @@ None at this time.
 
 ## 📝 Release Notes
 
-### 1.0.4
+### 1.0.5
 
-### Changed
-- Implement `compressCode`
-- Implemented a simpler code compression feature that removes extra whitespace and empty lines
-- Updated file processing to use the new compression method
-- Improved comment removal functionality
+### Added
+- Token counting and cost estimation feature
+- New settings:
+  - `snapsource.llmModel`: Choose the LLM model for token count and cost estimation
+  - `snapsource.maxTokens`: Set maximum token limit before warning
+  - `snapsource.enableTokenWarning`: Enable/disable token count warning
+
 
 For a full list of changes, please see the [CHANGELOG.md](CHANGELOG.md) file.
 

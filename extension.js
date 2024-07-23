@@ -3,6 +3,15 @@ const fs = require('fs').promises;
 const path = require('path');
 const ignore = require('ignore');
 const isBinaryFile = require('isbinaryfile').isBinaryFile;
+const { tokenizeAndEstimateCost } = require('llm-cost');
+
+const MODEL_MAX_TOKENS = {
+    "gpt-4": 8192,
+    "gpt-4o": 128000,
+    "gpt-4o-mini": 128000,
+    "claude-3-5-sonnet-20240620": 200000,
+    "claude-3-opus-20240229": 200000
+};
 
 function activate(context) {
     let disposable = vscode.commands.registerCommand('snapsource.copyToClipboard', async (uri, uris) => {
@@ -16,6 +25,9 @@ function activate(context) {
             const includeProjectTree = config.get('includeProjectTree') || true;
             const compressCode = config.get('compressCode') || false;
             const removeComments = config.get('removeComments') || false;
+            const llmModel = config.get('llmModel') || 'gpt-4';
+            const maxTokens = config.get('maxTokens');
+            const enableTokenWarning = config.get('enableTokenWarning');
 
             const itemsToProcess = uris && uris.length > 0 ? uris : [uri];
 
@@ -29,10 +41,7 @@ function activate(context) {
                         await addGitIgnoreRules(workspaceFolder.uri.fsPath, ig);
                     }
 
-                    let projectTree = '';
-                    if (includeProjectTree) {
-                        projectTree = await getProjectTree(workspaceFolder.uri.fsPath, ig, maxDepth);
-                    }
+                    let projectTree = includeProjectTree ? await getProjectTree(workspaceFolder.uri.fsPath, ig, maxDepth) : '';
                     let processedContent = [];
 
                     for (const item of itemsToProcess) {
@@ -46,8 +55,28 @@ function activate(context) {
                     }
 
                     const formattedContent = formatOutput(outputFormat, projectTree, processedContent);
+                    
+                    const { inputTokens, cost } = await tokenizeAndEstimateCost({
+                        model: llmModel,
+                        input: formattedContent,
+                        output: ''
+                    });
+
                     await vscode.env.clipboard.writeText(formattedContent);
-                    vscode.window.showInformationMessage(`Copied ${includeProjectTree ? 'project tree and ' : ''}content of non-ignored files to clipboard in ${outputFormat} format!`);
+
+                    let message = `Copied to clipboard: ${outputFormat} format, ${inputTokens} tokens, $${cost.toFixed(4)} est. cost`;
+
+                    if (enableTokenWarning) {
+                        const tokenLimit = maxTokens !== null ? maxTokens : (MODEL_MAX_TOKENS[llmModel] || 0);
+                        if (tokenLimit > 0 && inputTokens > tokenLimit) {
+                            message += `\nWARNING: Token count (${inputTokens}) exceeds the set limit (${tokenLimit}).`;
+                            vscode.window.showWarningMessage(message);
+                        } else {
+                            vscode.window.showInformationMessage(message);
+                        }
+                    } else {
+                        vscode.window.showInformationMessage(message);
+                    }
                 } else {
                     throw new Error('Unable to determine workspace folder.');
                 }

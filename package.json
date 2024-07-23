@@ -2,7 +2,7 @@
   "name": "snapsource",
   "displayName": "SnapSource",
   "description": "Easily copy file and folder contents with project tree structure to clipboard for LLM context, with multiple output formats",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "publisher": "LeonKohli",
   "author": {
     "name": "Leon Kohli"
@@ -23,7 +23,9 @@
     "markdown",
     "copy",
     "compress",
-    "remove comments"
+    "remove comments",
+    "token count",
+    "cost estimation"
   ],
   "icon": "images/icon.png",
   "galleryBanner": {
@@ -121,6 +123,28 @@
           "type": "boolean",
           "default": false,
           "description": "Remove comments from code when copying"
+        },
+        "snapsource.llmModel": {
+          "type": "string",
+          "enum": [
+            "gpt-4",
+            "gpt-4o",
+            "gpt-4o-mini",
+            "claude-3-5-sonnet-20240620",
+            "claude-3-opus-20240229"
+          ],
+          "default": "gpt-4o",
+          "description": "LLM model to use for token count and cost estimation"
+        },
+        "snapsource.maxTokens": {
+          "type": ["number", "null"],
+          "default": null,
+          "description": "Maximum number of tokens allowed before warning. Set to 0 or null to disable warning. If not set, it will use the model's default max tokens."
+        },
+        "snapsource.enableTokenWarning": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable warning when token count exceeds the maximum"
         }
       }
     }
@@ -145,7 +169,8 @@
     "@types/vscode": "^1.89.0",
     "@vscode/test-cli": "^0.0.10",
     "ignore": "^5.3.1",
-    "isbinaryfile": "^5.0.0"
+    "isbinaryfile": "^5.0.0",
+    "llm-cost": "^1.0.5"
   },
   "repository": {
     "type": "git",
