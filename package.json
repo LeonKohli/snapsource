@@ -1,7 +1,7 @@
 {
   "name": "snapsource",
-  "displayName": "SnapSource",
-  "description": "Easily copy file and folder contents with project tree structure to clipboard for LLM context, with multiple output formats",
+  "displayName": "SnapSource Copy Project Code to ChatGPT",
+  "description": "Easily copy file and folder contents with project tree structure to clipboard for AI (LLM/ChatGPT/Claude/...) context.",
   "version": "1.0.5",
   "publisher": "LeonKohli",
   "author": {
@@ -25,7 +25,9 @@
     "compress",
     "remove comments",
     "token count",
-    "cost estimation"
+    "cost estimation",
+    "ai",
+    "chatgpt"
   ],
   "icon": "images/icon.png",
   "galleryBanner": {
