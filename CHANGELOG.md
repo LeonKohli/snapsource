@@ -2,6 +2,13 @@
 
 All notable changes to the "SnapSource" extension will be documented in this file.
 
+## [1.0.3] - 2024-07-15
+
+### Added
+- New setting `snapsource.includeProjectTree` to optionally disable project tree generation
+- Updated output formatting to respect the new setting
+
+
 ## [1.0.2] - 2024-07-14
 
 ### Added

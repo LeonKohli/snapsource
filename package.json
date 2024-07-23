@@ -2,7 +2,7 @@
   "name": "snapsource",
   "displayName": "SnapSource",
   "description": "Easily copy file and folder contents with project tree structure to clipboard for LLM context, with multiple output formats",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "publisher": "LeonKohli",
   "author": {
     "name": "Leon Kohli"
@@ -104,6 +104,11 @@
           "type": "number",
           "default": 1048576,
           "description": "Maximum file size (in bytes) to include in the output. Default is 1MB (1048576 bytes)."
+        },
+        "snapsource.includeProjectTree": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include the project tree structure in the output"
         }
       }
     }

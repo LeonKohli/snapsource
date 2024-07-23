@@ -13,6 +13,7 @@ function activate(context) {
             const excludePatterns = config.get('excludePatterns');
             const outputFormat = config.get('outputFormat');
             const maxFileSize = config.get('maxFileSize', 1024 * 1024); // Default to 1MB
+            const includeProjectTree = config.get('includeProjectTree', true); // New setting
 
             // If multiple items are selected, use those. Otherwise, use the single item.
             const itemsToProcess = uris && uris.length > 0 ? uris : [uri];
@@ -27,7 +28,10 @@ function activate(context) {
                         await addGitIgnoreRules(workspaceFolder.uri.fsPath, ig);
                     }
 
-                    const projectTree = await getProjectTree(workspaceFolder.uri.fsPath, ig, maxDepth);
+                    let projectTree = '';
+                    if (includeProjectTree) {
+                        projectTree = await getProjectTree(workspaceFolder.uri.fsPath, ig, maxDepth);
+                    }
                     let processedContent = [];
 
                     for (const item of itemsToProcess) {
@@ -42,7 +46,7 @@ function activate(context) {
 
                     const formattedContent = formatOutput(outputFormat, projectTree, processedContent);
                     await vscode.env.clipboard.writeText(formattedContent);
-                    vscode.window.showInformationMessage(`Copied project tree and content of non-ignored files to clipboard in ${outputFormat} format!`);
+                    vscode.window.showInformationMessage(`Copied ${includeProjectTree ? 'project tree and ' : ''}content of non-ignored files to clipboard in ${outputFormat} format!`);
                 } else {
                     throw new Error('Unable to determine workspace folder.');
                 }
@@ -167,7 +171,11 @@ function formatOutput(format, projectTree, content) {
 }
 
 function formatMarkdown(projectTree, content) {
-    let output = '# Project Structure\n\n```\n' + projectTree + '```\n\n# File Contents\n\n';
+    let output = '';
+    if (projectTree) {
+        output += '# Project Structure\n\n```\n' + projectTree + '```\n\n';
+    }
+    output += '# File Contents\n\n';
     content.forEach(file => {
         const fileExtension = path.extname(file.path).slice(1);
         const language = fileExtension ? fileExtension : '';
@@ -177,7 +185,11 @@ function formatMarkdown(projectTree, content) {
 }
 
 function formatPlainText(projectTree, content) {
-    let output = 'Project Structure:\n\n' + projectTree + '\n\nFile Contents:\n\n';
+    let output = '';
+    if (projectTree) {
+        output += 'Project Structure:\n\n' + projectTree + '\n\n';
+    }
+    output += 'File Contents:\n\n';
     content.forEach(file => {
         output += `File: ${file.path}\n\n${file.content}\n\n`;
     });

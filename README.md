@@ -15,12 +15,13 @@ SnapSource is a powerful Visual Studio Code extension that allows you to easily 
 - 🛡️ Robust error handling for various edge cases.
 - 🧠 Smart binary file detection to exclude non-text content.
 - 📏 Configurable file size limit to prevent oversized outputs.
+- 🔧 Option to include or exclude project tree structure in the output.
 
 ## 🔧 How to Use
 
 1. Select one or multiple files or folders in the VS Code Explorer.
 2. Right-click and select "Copy to Clipboard (SnapSource)" from the context menu.
-3. The file/folder content(s) and project tree will be copied to your clipboard, excluding dot files, binary files, and respecting ignore patterns and size limits.
+3. The file/folder content(s) and project tree (if enabled) will be copied to your clipboard, excluding dot files, binary files, and respecting ignore patterns and size limits.
 4. Paste the content into your preferred LLM interface.
 
 ## ⚙️ Extension Settings
@@ -34,13 +35,14 @@ This extension contributes the following settings:
 | `snapsource.excludePatterns` | Additional patterns to exclude from the project tree and file copying | `["node_modules", "*.log"]` |
 | `snapsource.outputFormat` | Output format for the copied content (options: "plaintext", "markdown") | `"plaintext"` |
 | `snapsource.maxFileSize` | Maximum file size (in bytes) to include in the output | `1048576` (1MB) |
+| `snapsource.includeProjectTree` | Include the project tree structure in the output | `true` |
 
 > **Note:** Dot files are always ignored, and binary files are automatically detected and excluded.
 
 ## 📊 Output Formats
 
-1. **Plaintext**: A simple text format with clear sections for project structure and file contents.
-2. **Markdown**: A formatted markdown output with code blocks for project structure and file contents.
+1. **Plaintext**: A simple text format with clear sections for project structure (if enabled) and file contents.
+2. **Markdown**: A formatted markdown output with code blocks for project structure (if enabled) and file contents.
 
 ## 📋 Requirements
 
@@ -52,11 +54,10 @@ None at this time.
 
 ## 📝 Release Notes
 
-### 1.0.2
+### 1.0.3
 
-- Added binary file detection
-- Implemented configurable file size limit
-- Improved error handling and performance
+- Added new setting `snapsource.includeProjectTree` to optionally disable project tree generation
+- Updated output formatting to respect the new setting
 
 For a full list of changes, please see the [CHANGELOG.md](CHANGELOG.md) file.
 
