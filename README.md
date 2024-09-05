@@ -2,7 +2,7 @@
 
 ![SnapSource Logo](images/icon.png)
 
-SnapSource is a powerful Visual Studio Code extension that allows you to easily copy file and folder contents along with the project tree structure to your clipboard. It automatically ignores dot files, respects .gitignore rules, and provides plaintext and markdown output formats. This tool is particularly useful when working with Large Language Models (LLMs) and you need to provide context about your project.
+SnapSource is a powerful Visual Studio Code extension that allows you to easily copy file and folder contents along with the project tree structure to your clipboard. It automatically ignores dot files, respects .gitignore rules, and provides plaintext, markdown, and XML output formats. This tool is particularly useful when working with Large Language Models (LLMs) and you need to provide context about your project.
 
 ## 🚀 Features
 
@@ -10,7 +10,7 @@ SnapSource is a powerful Visual Studio Code extension that allows you to easily 
 - 🔒 Automatically ignore dot files (like .env, .git) for security and cleanliness.
 - 🚫 Respect .gitignore rules and custom exclude patterns.
 - 🌳 Configurable project tree depth.
-- 📄 Two output formats: plaintext and markdown.
+- 📄 Three output formats: plaintext, markdown, and XML.
 - ⚡ Asynchronous processing for improved performance with large directories.
 - 🛡️ Robust error handling for various edge cases.
 - 🧠 Smart binary file detection to exclude non-text content.
@@ -18,6 +18,7 @@ SnapSource is a powerful Visual Studio Code extension that allows you to easily 
 - 🔧 Option to include or exclude project tree structure in the output.
 - 🗜️ Simple code compression option for more compact output.
 - 🧹 Option to remove comments from code.
+- 🔢 Token counting and cost estimation for various LLM models.
 
 ## 🔧 How to Use
 
@@ -35,11 +36,15 @@ This extension contributes the following settings:
 | `snapsource.ignoreGitIgnore` | Respect .gitignore rules when generating the project tree and copying files | `true` |
 | `snapsource.maxDepth` | Maximum depth of the project tree | `5` |
 | `snapsource.excludePatterns` | Additional patterns to exclude from the project tree and file copying | `["node_modules", "*.log"]` |
-| `snapsource.outputFormat` | Output format for the copied content (options: "plaintext", "markdown") | `"plaintext"` |
+| `snapsource.outputFormat` | Output format for the copied content (options: "plaintext", "markdown", "xml") | `"plaintext"` |
 | `snapsource.maxFileSize` | Maximum file size (in bytes) to include in the output | `1048576` (1MB) |
 | `snapsource.includeProjectTree` | Include the project tree structure in the output | `true` |
 | `snapsource.compressCode` | Remove extra whitespace and empty lines from code when copying | `false` |
 | `snapsource.removeComments` | Remove comments from code when copying | `false` |
+| `snapsource.llmModel` | LLM model to use for token count and cost estimation | `"gpt-4o"` |
+| `snapsource.maxTokens` | Maximum number of tokens allowed before warning | `null` |
+| `snapsource.enableTokenWarning` | Enable warning when token count exceeds the maximum | `true` |
+| `snapsource.enableTokenCounting` | Enable token counting and cost estimation (requires network access) | `false` |
 
 > **Note:** Dot files are always ignored, and binary files are automatically detected and excluded.
 
@@ -47,6 +52,7 @@ This extension contributes the following settings:
 
 1. **Plaintext**: A simple text format with clear sections for project structure (if enabled) and file contents.
 2. **Markdown**: A formatted markdown output with code blocks for project structure (if enabled) and file contents.
+3. **XML**: A structured XML format with separate sections for project structure and file contents.
 
 ## 📋 Requirements
 
@@ -58,15 +64,11 @@ None at this time.
 
 ## 📝 Release Notes
 
-### 1.0.5
+### 1.0.7
 
 ### Added
-- Token counting and cost estimation feature
-- New settings:
-  - `snapsource.llmModel`: Choose the LLM model for token count and cost estimation
-  - `snapsource.maxTokens`: Set maximum token limit before warning
-  - `snapsource.enableTokenWarning`: Enable/disable token count warning
-
+- New XML output format
+- Option to disable token counting and cost estimation
 
 For a full list of changes, please see the [CHANGELOG.md](CHANGELOG.md) file.
 

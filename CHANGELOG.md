@@ -2,6 +2,12 @@
 
 All notable changes to the "SnapSource" extension will be documented in this file.
 
+## [1.0.7] - 2024-07-26
+
+### Added
+- New XML output format
+- Option to disable token counting and cost estimation
+
 ## [1.0.5] - 2024-07-25
 
 ### Added
@@ -10,6 +16,7 @@ All notable changes to the "SnapSource" extension will be documented in this fil
   - `snapsource.llmModel`: Choose the LLM model for token count and cost estimation
   - `snapsource.maxTokens`: Set maximum token limit before warning
   - `snapsource.enableTokenWarning`: Enable/disable token count warning
+  - `snapsource.enableTokenCounting`: Enable/disable token counting and cost estimation
 
 ### Changed
 - Updated output to include token count and estimated cost information

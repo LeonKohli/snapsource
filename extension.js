@@ -28,6 +28,7 @@ function activate(context) {
             const llmModel = config.get('llmModel') || 'gpt-4';
             const maxTokens = config.get('maxTokens');
             const enableTokenWarning = config.get('enableTokenWarning');
+            const enableTokenCounting = config.get('enableTokenCounting') || false;
 
             const itemsToProcess = uris && uris.length > 0 ? uris : [uri];
 
@@ -56,26 +57,31 @@ function activate(context) {
 
                     const formattedContent = formatOutput(outputFormat, projectTree, processedContent);
                     
-                    const { inputTokens, cost } = await tokenizeAndEstimateCost({
-                        model: llmModel,
-                        input: formattedContent,
-                        output: ''
-                    });
+                    if (enableTokenCounting) {
+                        const { inputTokens, cost } = await tokenizeAndEstimateCost({
+                            model: llmModel,
+                            input: formattedContent,
+                            output: ''
+                        });
 
-                    await vscode.env.clipboard.writeText(formattedContent);
+                        await vscode.env.clipboard.writeText(formattedContent);
 
-                    let message = `Copied to clipboard: ${outputFormat} format, ${inputTokens} tokens, $${cost.toFixed(4)} est. cost`;
+                        let message = `Copied to clipboard: ${outputFormat} format, ${inputTokens} tokens, $${cost.toFixed(4)} est. cost`;
 
-                    if (enableTokenWarning) {
-                        const tokenLimit = maxTokens !== null ? maxTokens : (MODEL_MAX_TOKENS[llmModel] || 0);
-                        if (tokenLimit > 0 && inputTokens > tokenLimit) {
-                            message += `\nWARNING: Token count (${inputTokens}) exceeds the set limit (${tokenLimit}).`;
-                            vscode.window.showWarningMessage(message);
+                        if (enableTokenWarning) {
+                            const tokenLimit = maxTokens !== null ? maxTokens : (MODEL_MAX_TOKENS[llmModel] || 0);
+                            if (tokenLimit > 0 && inputTokens > tokenLimit) {
+                                message += `\nWARNING: Token count (${inputTokens}) exceeds the set limit (${tokenLimit}).`;
+                                vscode.window.showWarningMessage(message);
+                            } else {
+                                vscode.window.showInformationMessage(message);
+                            }
                         } else {
                             vscode.window.showInformationMessage(message);
                         }
                     } else {
-                        vscode.window.showInformationMessage(message);
+                        await vscode.env.clipboard.writeText(formattedContent);
+                        vscode.window.showInformationMessage(`Copied to clipboard: ${outputFormat} format`);
                     }
                 } else {
                     throw new Error('Unable to determine workspace folder.');
@@ -222,6 +228,8 @@ function formatOutput(format, projectTree, content) {
     switch (format) {
         case 'markdown':
             return formatMarkdown(projectTree, content);
+        case 'xml':
+            return formatXML(projectTree, content);
         case 'plaintext':
         default:
             return formatPlainText(projectTree, content);
@@ -252,6 +260,39 @@ function formatPlainText(projectTree, content) {
         output += `File: ${file.path}\n\n${file.content}\n\n`;
     });
     return output;
+}
+
+function formatXML(projectTree, content) {
+    let output = '<?xml version="1.0" encoding="UTF-8"?>\n<snapsource>\n';
+    
+    if (projectTree) {
+        output += '  <project_structure>\n';
+        output += projectTree.split('\n').map(line => '    ' + line).join('\n');
+        output += '  </project_structure>\n\n';
+    }
+    
+    output += '  <file_contents>\n';
+    content.forEach(file => {
+        output += `    <file path="${escapeXML(file.path)}">\n`;
+        output += `      <![CDATA[${file.content}]]>\n`;
+        output += '    </file>\n';
+    });
+    output += '  </file_contents>\n';
+    
+    output += '</snapsource>';
+    return output;
+}
+
+function escapeXML(unsafe) {
+    return unsafe.replace(/[<>&'"]/g, function (c) {
+        switch (c) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case "'": return '&apos;';
+            case '"': return '&quot;';
+        }
+    });
 }
 
 function deactivate() {}
