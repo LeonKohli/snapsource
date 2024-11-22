@@ -64,11 +64,14 @@ None at this time.
 
 ## 📝 Release Notes
 
-### 1.0.7
+### 1.0.11
 
-### Added
-- New XML output format
-- Option to disable token counting and cost estimation
+#### Fixed
+- Resolved an issue where the `includeProjectTree` setting was not being respected.
+- Fixed a linter error related to the `ignore` package usage.
+
+#### Changed
+- Removed unnecessary activation event from package.json.
 
 For a full list of changes, please see the [CHANGELOG.md](CHANGELOG.md) file.
 
