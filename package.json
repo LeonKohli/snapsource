@@ -43,9 +43,7 @@
   ],
   "preview": false,
   "pricing": "Free",
-  "activationEvents": [
-    "onCommand:snapsource.copyToClipboard"
-  ],  
+  "activationEvents": [],
   "main": "./extension.js",
   "contributes": {
     "commands": [

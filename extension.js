@@ -1,7 +1,7 @@
 const vscode = require('vscode');
 const fs = require('fs').promises;
 const path = require('path');
-const ignore = require('ignore');
+const ignore = require('ignore').default;
 const isBinaryFile = require('isbinaryfile').isBinaryFile;
 const { tokenizeAndEstimateCost } = require('llm-cost');
 
@@ -22,7 +22,7 @@ function activate(context) {
             const excludePatterns = config.get('excludePatterns');
             const outputFormat = config.get('outputFormat');
             const maxFileSize = config.get('maxFileSize') || 1024 * 1024; // Default to 1MB
-            const includeProjectTree = config.get('includeProjectTree') || true;
+            const includeProjectTree = config.get('includeProjectTree');
             const compressCode = config.get('compressCode') || false;
             const removeComments = config.get('removeComments') || false;
             const llmModel = config.get('llmModel') || 'gpt-4';
@@ -35,8 +35,7 @@ function activate(context) {
             if (itemsToProcess.length > 0) {
                 const workspaceFolder = vscode.workspace.getWorkspaceFolder(itemsToProcess[0]);
                 if (workspaceFolder) {
-                    const ig = ignore().add(excludePatterns);
-                    ig.add('.*'); // Ignore dot files
+                    const ig = ignore().add(excludePatterns).add('.*');
 
                     if (ignoreGitIgnore) {
                         await addGitIgnoreRules(workspaceFolder.uri.fsPath, ig);
