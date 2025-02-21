@@ -6,8 +6,10 @@ on:
       - "v*"
 
 jobs:
-  publish-marketplace:
+  build:
     runs-on: ubuntu-latest
+    outputs:
+      vsix_path: ${{ steps.package.outputs.vsix_path }}
     steps:
       - uses: actions/checkout@v4
       
@@ -19,25 +21,91 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Package Extension
+        id: package
+        run: |
+          npx vsce package
+          echo "vsix_path=$(ls *.vsix)" >> $GITHUB_OUTPUT
+
+      - name: Upload Extension Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix-package
+          path: '*.vsix'
+
+  publish-marketplace:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download Extension Package
+        uses: actions/download-artifact@v4
+        with:
+          name: vsix-package
+
       - name: Publish to Visual Studio Marketplace
         continue-on-error: true  # This allows the workflow to continue even if marketplace publish fails
         uses: HaaLeo/publish-vscode-extension@v1.6.2
         with:
           pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
           registryUrl: https://marketplace.visualstudio.com
+          extensionFile: ${{ needs.build.outputs.vsix_path }}
 
   create-release:
+    needs: [build, publish-marketplace]
     runs-on: ubuntu-latest
-    needs: publish-marketplace  # This ensures this job runs after the marketplace publish attempt
     steps:
       - uses: actions/checkout@v4
-        
+        with:
+          fetch-depth: 0  # Fetch all history for changelog generation
+      
+      - name: Download Extension Package
+        uses: actions/download-artifact@v4
+        with:
+          name: vsix-package
+
+      - name: Generate Release Notes
+        id: release_notes
+        run: |
+          # Get the tag message
+          TAG_MSG=$(git tag -l --format='%(contents)' ${GITHUB_REF#refs/tags/})
+          # Get commits since last release
+          PREV_TAG=$(git describe --tags --abbrev=0 ${GITHUB_REF#refs/tags/}^ 2>/dev/null || echo '')
+          if [ -n "$PREV_TAG" ]; then
+            CHANGES=$(git log --pretty=format:"- %s" ${PREV_TAG}..${GITHUB_REF#refs/tags/})
+          else
+            CHANGES=$(git log --pretty=format:"- %s" ${GITHUB_REF#refs/tags/})
+          fi
+          # Create release notes
+          echo "### Release Notes" > release_notes.md
+          echo "" >> release_notes.md
+          echo "$TAG_MSG" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### Changes" >> release_notes.md
+          echo "$CHANGES" >> release_notes.md
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          cat release_notes.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Create GitHub Release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        id: create_release
         with:
           tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          release_name: SnapSource ${{ github.ref_name }}
+          body: ${{ steps.release_notes.outputs.notes }}
           draft: false
           prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ needs.build.outputs.vsix_path }}
+          asset_name: ${{ needs.build.outputs.vsix_path }}
+          asset_content_type: application/octet-stream
