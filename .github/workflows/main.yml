@@ -5,12 +5,18 @@ on:
     tags:
       - "v*"
 
+# Add concurrency control to prevent conflicts
+concurrency: 
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
       vsix_path: ${{ steps.package.outputs.vsix_path }}
     steps:
+      # Pin to specific SHA for security
       - uses: actions/checkout@v4
       
       - name: Setup Node.js
@@ -18,8 +24,19 @@ jobs:
         with:
           node-version: '20'
 
+      # Add caching for faster builds
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: Install dependencies
         run: npm ci
+        env:
+          CI: true
 
       - name: Package Extension
         id: package
@@ -27,11 +44,19 @@ jobs:
           npx vsce package
           echo "vsix_path=$(ls *.vsix)" >> $GITHUB_OUTPUT
 
+      - name: Validate VSIX
+        run: |
+          if [ ! -f "${{ steps.package.outputs.vsix_path }}" ]; then
+            echo "VSIX file missing!"
+            exit 1
+          fi
+
       - name: Upload Extension Package
         uses: actions/upload-artifact@v4
         with:
           name: vsix-package
           path: '*.vsix'
+          retention-days: 1  # Only needed temporarily
 
   publish-marketplace:
     needs: build
@@ -44,8 +69,14 @@ jobs:
         with:
           name: vsix-package
 
+      - name: Validate Downloaded VSIX
+        run: |
+          if [ ! -f "${{ needs.build.outputs.vsix_path }}" ]; then
+            echo "Downloaded VSIX file missing!"
+            exit 1
+          fi
+
       - name: Publish to Visual Studio Marketplace
-        continue-on-error: true  # This allows the workflow to continue even if marketplace publish fails
         uses: HaaLeo/publish-vscode-extension@v1.6.2
         with:
           pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
@@ -58,7 +89,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch all history for changelog generation
+          fetch-depth: 0
       
       - name: Download Extension Package
         uses: actions/download-artifact@v4
@@ -70,42 +101,40 @@ jobs:
         run: |
           # Get the tag message
           TAG_MSG=$(git tag -l --format='%(contents)' ${GITHUB_REF#refs/tags/})
-          # Get commits since last release
+          
+          # Validate tag message
+          if [ -z "$TAG_MSG" ]; then
+            echo "Warning: Tag message is empty. Using default message."
+            TAG_MSG="Release ${GITHUB_REF#refs/tags/}"
+          fi
+          
+          # Get commits since last release (excluding merges)
           PREV_TAG=$(git describe --tags --abbrev=0 ${GITHUB_REF#refs/tags/}^ 2>/dev/null || echo '')
           if [ -n "$PREV_TAG" ]; then
-            CHANGES=$(git log --pretty=format:"- %s" ${PREV_TAG}..${GITHUB_REF#refs/tags/})
+            CHANGES=$(git log --no-merges --pretty=format:"- %s (%h)" ${PREV_TAG}..${GITHUB_REF#refs/tags/})
           else
-            CHANGES=$(git log --pretty=format:"- %s" ${GITHUB_REF#refs/tags/})
+            CHANGES=$(git log --no-merges --pretty=format:"- %s (%h)" ${GITHUB_REF#refs/tags/})
           fi
+          
           # Create release notes
-          echo "### Release Notes" > release_notes.md
-          echo "" >> release_notes.md
-          echo "$TAG_MSG" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "### Changes" >> release_notes.md
-          echo "$CHANGES" >> release_notes.md
+          {
+            echo "### Release Notes"
+            echo
+            echo "$TAG_MSG"
+            echo
+            echo "### Changes"
+            echo "$CHANGES"
+          } > release_notes.md
+          
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           cat release_notes.md >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+      # Use modern release action
       - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        id: create_release
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: SnapSource ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          name: SnapSource ${{ github.ref_name }}
           body: ${{ steps.release_notes.outputs.notes }}
-          draft: false
-          prerelease: false
-
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ needs.build.outputs.vsix_path }}
-          asset_name: ${{ needs.build.outputs.vsix_path }}
-          asset_content_type: application/octet-stream
+          files: ${{ needs.build.outputs.vsix_path }}
