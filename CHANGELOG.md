@@ -1,6 +1,11 @@
 # Change Log
 
-All notable changes to this extension will be documented in this file.
+All notable changes to the "Copy4AI" extension will be documented in this file.
+
+## [1.0.14] - 2024-03-26
+
+### Changed
+- Updated extension icon for better visibility and branding
 
 ## [1.0.13] - 2024-03-26
 
