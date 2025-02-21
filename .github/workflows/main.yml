@@ -135,6 +135,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref_name }}
-          name: SnapSource ${{ github.ref_name }}
+          name: Copy4AI ${{ github.ref_name }}
           body: ${{ steps.release_notes.outputs.notes }}
           files: ${{ needs.build.outputs.vsix_path }}

@@ -3,7 +3,7 @@ const vscode = require('vscode');
 const extension = require('../extension');
 const path = require('path');
 
-suite('SnapSource Extension Test Suite', () => {
+suite('Copy4AI Extension Test Suite', () => {
     suiteSetup(async () => {
         // This is run once before all tests
         await vscode.commands.executeCommand('workbench.action.closeAllEditors');
@@ -25,18 +25,18 @@ suite('SnapSource Extension Test Suite', () => {
 
     suite('Extension Basics', () => {
         test('Extension should be present', () => {
-            assert.ok(vscode.extensions.getExtension('LeonKohli.snapsource'));
+            assert.ok(vscode.extensions.getExtension('LeonKohli.copy4ai'));
         });
 
         test('Should activate extension', async () => {
-            const ext = vscode.extensions.getExtension('LeonKohli.snapsource');
+            const ext = vscode.extensions.getExtension('LeonKohli.copy4ai');
             await ext.activate();
             assert.strictEqual(ext.isActive, true);
         });
 
         test('Should register command', async () => {
             const commands = await vscode.commands.getCommands();
-            assert.ok(commands.includes('snapsource.copyToClipboard'));
+            assert.ok(commands.includes('copy4ai.copyToClipboard'));
         });
     });
 
@@ -240,11 +240,10 @@ suite('SnapSource Extension Test Suite', () => {
 
     suite('Command Functionality', () => {
         test('Should respect configuration settings', async function() {
-            // Increase timeout for this test
             this.timeout(30000);
             
             // Get the configuration
-            const config = vscode.workspace.getConfiguration('snapsource');
+            const config = vscode.workspace.getConfiguration('copy4ai');
             
             try {
                 // Reset settings first to ensure clean state
@@ -262,7 +261,7 @@ suite('SnapSource Extension Test Suite', () => {
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 
                 // Get a fresh configuration instance
-                const updatedConfig = vscode.workspace.getConfiguration('snapsource');
+                const updatedConfig = vscode.workspace.getConfiguration('copy4ai');
                 
                 // Verify settings
                 const format = updatedConfig.get('outputFormat');
@@ -270,7 +269,6 @@ suite('SnapSource Extension Test Suite', () => {
                 
                 assert.strictEqual(format, 'markdown', 'Should update output format setting');
                 assert.strictEqual(depth, 3, 'Should update max depth setting');
-
             } finally {
                 // Reset settings in cleanup
                 await config.update('outputFormat', undefined, vscode.ConfigurationTarget.Global);
@@ -287,7 +285,7 @@ suite('SnapSource Extension Test Suite', () => {
 
             try {
                 const uri = vscode.Uri.file(testFilePath);
-                await vscode.commands.executeCommand('snapsource.copyToClipboard', uri);
+                await vscode.commands.executeCommand('copy4ai.copyToClipboard', uri);
                 
                 const clipboardContent = await vscode.env.clipboard.readText();
                 assert.ok(clipboardContent.includes('[Binary file content not included]'), 
@@ -307,7 +305,7 @@ suite('SnapSource Extension Test Suite', () => {
 
             try {
                 const uri = vscode.Uri.file(testFilePath);
-                await vscode.commands.executeCommand('snapsource.copyToClipboard', uri);
+                await vscode.commands.executeCommand('copy4ai.copyToClipboard', uri);
                 
                 const clipboardContent = await vscode.env.clipboard.readText();
                 assert.ok(clipboardContent.includes('Size (2097152 bytes) exceeds the maximum allowed size'), 
@@ -340,7 +338,7 @@ suite('SnapSource Extension Test Suite', () => {
                 await new Promise(resolve => setTimeout(resolve, 100));
 
                 // Test multiple file selection
-                await vscode.commands.executeCommand('snapsource.copyToClipboard', uris[0], uris);
+                await vscode.commands.executeCommand('copy4ai.copyToClipboard', uris[0], uris);
                 
                 // Ensure clipboard is updated before reading
                 await new Promise(resolve => setTimeout(resolve, 100));

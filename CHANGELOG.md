@@ -1,6 +1,14 @@
 # Change Log
 
-All notable changes to the "SnapSource" extension will be documented in this file.
+All notable changes to this extension will be documented in this file.
+
+## [1.0.13] - 2024-03-26
+
+### Changed
+- Renamed extension from "SnapSource" to "Copy4AI" (same extension, new name)
+- Updated all configuration settings to use new namespace (copy4ai.*)
+- Updated documentation and branding
+- Note: This is the same extension as before, just with a new name. All your existing settings will be migrated automatically.
 
 ## [1.0.11] - 2024-11-22
 
@@ -26,10 +34,10 @@ All notable changes to the "SnapSource" extension will be documented in this fil
 
 - Token counting and cost estimation feature
 - New settings:
-  - `snapsource.llmModel`: Choose the LLM model for token count and cost estimation
-  - `snapsource.maxTokens`: Set maximum token limit before warning
-  - `snapsource.enableTokenWarning`: Enable/disable token count warning
-  - `snapsource.enableTokenCounting`: Enable/disable token counting and cost estimation
+  - `copy4ai.llmModel`: Choose the LLM model for token count and cost estimation
+  - `copy4ai.maxTokens`: Set maximum token limit before warning
+  - `copy4ai.enableTokenWarning`: Enable/disable token count warning
+  - `copy4ai.enableTokenCounting`: Enable/disable token counting and cost estimation
 
 ### Changed
 
@@ -48,7 +56,7 @@ All notable changes to the "SnapSource" extension will be documented in this fil
 
 ### Added
 
-- New setting `snapsource.includeProjectTree` to optionally disable project tree generation
+- New setting `copy4ai.includeProjectTree` to optionally disable project tree generation
 - Updated output formatting to respect the new setting
 
 ## [1.0.2] - 2024-07-14
@@ -56,7 +64,7 @@ All notable changes to the "SnapSource" extension will be documented in this fil
 ### Added
 
 - Binary file detection: Binary files are now identified and their content is not included in the output.
-- File size limit: Added a new configuration option `snapsource.maxFileSize` to limit the size of files included in the output.
+- File size limit: Added a new configuration option `copy4ai.maxFileSize` to limit the size of files included in the output.
 
 ### Improved
 
