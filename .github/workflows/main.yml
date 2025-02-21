@@ -5,6 +5,10 @@ on:
     tags:
       - "v*"
 
+# Add permissions needed for release creation
+permissions:
+  contents: write
+
 # Add concurrency control to prevent conflicts
 concurrency: 
   group: release-${{ github.ref }}
@@ -130,11 +134,13 @@ jobs:
           cat release_notes.md >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      # Use modern release action
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
           tag_name: ${{ github.ref_name }}
           name: Copy4AI ${{ github.ref_name }}
           body: ${{ steps.release_notes.outputs.notes }}
           files: ${{ needs.build.outputs.vsix_path }}
+          
