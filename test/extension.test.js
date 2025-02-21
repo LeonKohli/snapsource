@@ -25,18 +25,18 @@ suite('Copy4AI Extension Test Suite', () => {
 
     suite('Extension Basics', () => {
         test('Extension should be present', () => {
-            assert.ok(vscode.extensions.getExtension('LeonKohli.copy4ai'));
+            assert.ok(vscode.extensions.getExtension('LeonKohli.snapsource'));
         });
 
         test('Should activate extension', async () => {
-            const ext = vscode.extensions.getExtension('LeonKohli.copy4ai');
+            const ext = vscode.extensions.getExtension('LeonKohli.snapsource');
             await ext.activate();
             assert.strictEqual(ext.isActive, true);
         });
 
         test('Should register command', async () => {
             const commands = await vscode.commands.getCommands();
-            assert.ok(commands.includes('copy4ai.copyToClipboard'));
+            assert.ok(commands.includes('snapsource.copyToClipboard'));
         });
     });
 
@@ -243,7 +243,7 @@ suite('Copy4AI Extension Test Suite', () => {
             this.timeout(30000);
             
             // Get the configuration
-            const config = vscode.workspace.getConfiguration('copy4ai');
+            const config = vscode.workspace.getConfiguration('snapsource');
             
             try {
                 // Reset settings first to ensure clean state
@@ -261,7 +261,7 @@ suite('Copy4AI Extension Test Suite', () => {
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 
                 // Get a fresh configuration instance
-                const updatedConfig = vscode.workspace.getConfiguration('copy4ai');
+                const updatedConfig = vscode.workspace.getConfiguration('snapsource');
                 
                 // Verify settings
                 const format = updatedConfig.get('outputFormat');
@@ -285,7 +285,7 @@ suite('Copy4AI Extension Test Suite', () => {
 
             try {
                 const uri = vscode.Uri.file(testFilePath);
-                await vscode.commands.executeCommand('copy4ai.copyToClipboard', uri);
+                await vscode.commands.executeCommand('snapsource.copyToClipboard', uri);
                 
                 const clipboardContent = await vscode.env.clipboard.readText();
                 assert.ok(clipboardContent.includes('[Binary file content not included]'), 
@@ -305,7 +305,7 @@ suite('Copy4AI Extension Test Suite', () => {
 
             try {
                 const uri = vscode.Uri.file(testFilePath);
-                await vscode.commands.executeCommand('copy4ai.copyToClipboard', uri);
+                await vscode.commands.executeCommand('snapsource.copyToClipboard', uri);
                 
                 const clipboardContent = await vscode.env.clipboard.readText();
                 assert.ok(clipboardContent.includes('Size (2097152 bytes) exceeds the maximum allowed size'), 
@@ -338,7 +338,7 @@ suite('Copy4AI Extension Test Suite', () => {
                 await new Promise(resolve => setTimeout(resolve, 100));
 
                 // Test multiple file selection
-                await vscode.commands.executeCommand('copy4ai.copyToClipboard', uris[0], uris);
+                await vscode.commands.executeCommand('snapsource.copyToClipboard', uris[0], uris);
                 
                 // Ensure clipboard is updated before reading
                 await new Promise(resolve => setTimeout(resolve, 100));

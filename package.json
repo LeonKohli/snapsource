@@ -1,5 +1,5 @@
 {
-  "name": "copy4ai",
+  "name": "snapsource",
   "displayName": "Copy4AI - Copy Project Code to ChatGPT",
   "description": "Easily copy file and folder contents with project tree structure to clipboard for AI (LLM/ChatGPT/Claude/...) context.",
   "version": "1.0.13",
@@ -36,8 +36,8 @@
   },
   "badges": [
     {
-      "url": "https://img.shields.io/visual-studio-marketplace/v/LeonKohli.copy4ai.svg",
-      "href": "https://marketplace.visualstudio.com/items?itemName=LeonKohli.copy4ai",
+      "url": "https://img.shields.io/visual-studio-marketplace/v/LeonKohli.snapsource.svg",
+      "href": "https://marketplace.visualstudio.com/items?itemName=LeonKohli.snapsource",
       "description": "VS Code Marketplace Version"
     }
   ],
@@ -48,27 +48,27 @@
   "contributes": {
     "commands": [
       {
-        "command": "copy4ai.copyToClipboard",
+        "command": "snapsource.copyToClipboard",
         "title": "Copy to Clipboard (Copy4AI)"
       }
     ],
     "menus": {
       "commandPalette": [
         {
-          "command": "copy4ai.copyToClipboard",
+          "command": "snapsource.copyToClipboard",
           "when": "false"
         }
       ],
       "explorer/context": [
         {
-          "command": "copy4ai.copyToClipboard",
+          "command": "snapsource.copyToClipboard",
           "group": "7_modification",
           "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot"
         }
       ],
       "editor/context": [
         {
-          "command": "copy4ai.copyToClipboard",
+          "command": "snapsource.copyToClipboard",
           "group": "1_modification",
           "when": "editorFocus"
         }
@@ -78,17 +78,17 @@
       {
         "title": "Copy4AI",
         "properties": {
-          "copy4ai.ignoreGitIgnore": {
+          "snapsource.ignoreGitIgnore": {
             "type": "boolean",
             "default": true,
             "description": "Respect .gitignore rules when generating the project tree and copying files"
           },
-          "copy4ai.maxDepth": {
+          "snapsource.maxDepth": {
             "type": "number",
             "default": 5,
             "description": "Maximum depth of the project tree"
           },
-          "copy4ai.excludePatterns": {
+          "snapsource.excludePatterns": {
             "type": "array",
             "default": [
               "node_modules",
@@ -96,7 +96,7 @@
             ],
             "description": "Additional patterns to exclude from the project tree and file copying (dot files are always ignored)"
           },
-          "copy4ai.outputFormat": {
+          "snapsource.outputFormat": {
             "type": "string",
             "enum": [
               "plaintext",
@@ -106,12 +106,12 @@
             "default": "plaintext",
             "description": "Output format for the copied content"
           },
-          "copy4ai.maxFileSize": {
+          "snapsource.maxFileSize": {
             "type": "number",
             "default": 1048576,
             "description": "Maximum file size (in bytes) to include in the output. Default is 1MB (1048576 bytes)."
           },
-          "copy4ai.includeProjectTree": {
+          "snapsource.includeProjectTree": {
             "type": "boolean",
             "default": true,
             "description": "Include the project tree structure in the output"
@@ -121,12 +121,12 @@
       {
         "title": "Copy4AI: Code Processing",
         "properties": {
-          "copy4ai.compressCode": {
+          "snapsource.compressCode": {
             "type": "boolean",
             "default": false,
             "description": "Remove extra whitespace and empty lines from code when copying"
           },
-          "copy4ai.removeComments": {
+          "snapsource.removeComments": {
             "type": "boolean",
             "default": false,
             "description": "Remove comments from code when copying"
@@ -136,7 +136,7 @@
       {
         "title": "Copy4AI: Token Counting",
         "properties": {
-          "copy4ai.llmModel": {
+          "snapsource.llmModel": {
             "type": "string",
             "enum": [
               "gpt-4",
@@ -148,17 +148,17 @@
             "default": "gpt-4o",
             "description": "LLM model to use for token count and cost estimation"
           },
-          "copy4ai.maxTokens": {
+          "snapsource.maxTokens": {
             "type": ["number", "null"],
             "default": null,
             "description": "Maximum number of tokens allowed before warning. Set to 0 or null to disable warning. If not set, it will use the model's default max tokens."
           },
-          "copy4ai.enableTokenWarning": {
+          "snapsource.enableTokenWarning": {
             "type": "boolean",
             "default": true,
             "description": "Enable warning when token count exceeds the maximum"
           },
-          "copy4ai.enableTokenCounting": {
+          "snapsource.enableTokenCounting": {
             "type": "boolean",
             "default": false,
             "description": "Enable token counting and cost estimation (requires network access)"
