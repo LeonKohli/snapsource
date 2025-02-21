@@ -171,7 +171,7 @@
     "vscode:prepublish": "npm run lint",
     "lint": "eslint .",
     "pretest": "npm run lint",
-    "test": "node ./test/runTest.js"
+    "test": "vscode-test"
   },
   "devDependencies": {
     "@types/glob": "^7.1.3",

@@ -6,6 +6,20 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
+			"name": "Extension Tests",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"--extensionTestsPath=${workspaceFolder}/test"
+			],
+			"outFiles": ["${workspaceFolder}/out/test/**/*.js"],
+			"env": {
+				"VSCODE_DEBUG_MODE": "true"
+			}
+		},
+		{
 			"name": "Run Extension",
 			"type": "extensionHost",
 			"request": "launch",

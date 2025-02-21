@@ -164,7 +164,10 @@ async function processFile(filePath, rootPath, ig, maxFileSize, compressCode, re
     if (ig.ignores(relativePath)) return null;
 
     try {
+        // Get file stats first
         const stats = await fs.stat(filePath);
+
+        // Check file size before proceeding
         if (stats.size > maxFileSize) {
             return {
                 path: relativePath,
@@ -172,6 +175,7 @@ async function processFile(filePath, rootPath, ig, maxFileSize, compressCode, re
             };
         }
 
+        // Then check if binary
         const isBinary = await isBinaryFile(filePath);
         if (isBinary) {
             return {
@@ -180,21 +184,28 @@ async function processFile(filePath, rootPath, ig, maxFileSize, compressCode, re
             };
         }
 
-        let fileContent = await fs.readFile(filePath, 'utf8');
+        // Read and process file content
+        const fileContent = await fs.readFile(filePath, 'utf8');
+        let processedContent = fileContent;
 
         if (removeComments || compressCode) {
-            fileContent = processContent(fileContent, removeComments, compressCode);
+            processedContent = processContent(fileContent, removeComments, compressCode);
         }
 
         return {
             path: relativePath,
-            content: fileContent
+            content: processedContent
         };
     } catch (error) {
+        // Improved error handling with specific error types
+        const errorMessage = error.code === 'ENOENT' ? 'File not found' :
+            error.code === 'EACCES' ? 'Permission denied' :
+            error.message;
+            
         console.error(`Error processing file ${relativePath}:`, error);
         return {
             path: relativePath,
-            content: `[Error reading file: ${error.message}]`
+            content: `[Error reading file: ${errorMessage}]`
         };
     }
 }
@@ -266,14 +277,18 @@ function formatXML(projectTree, content) {
     
     if (projectTree) {
         output += '  <project_structure>\n';
-        output += projectTree.split('\n').map(line => '    ' + line).join('\n');
-        output += '  </project_structure>\n\n';
+        output += projectTree.split('\n')
+            .map(line => '    ' + escapeXML(line))
+            .join('\n');
+        output += '\n  </project_structure>\n\n';
     }
     
     output += '  <file_contents>\n';
     content.forEach(file => {
         output += `    <file path="${escapeXML(file.path)}">\n`;
-        output += `      <![CDATA[${file.content}]]>\n`;
+        // Ensure CDATA doesn't break if content contains ']]>'
+        const safeContent = file.content.replace(/]]>/g, ']]]]><![CDATA[>');
+        output += `      <![CDATA[${safeContent}]]>\n`;
         output += '    </file>\n';
     });
     output += '  </file_contents>\n';
@@ -283,20 +298,33 @@ function formatXML(projectTree, content) {
 }
 
 function escapeXML(unsafe) {
-    return unsafe.replace(/[<>&'"]/g, function (c) {
-        switch (c) {
-            case '<': return '&lt;';
-            case '>': return '&gt;';
-            case '&': return '&amp;';
-            case "'": return '&apos;';
-            case '"': return '&quot;';
-        }
-    });
+    if (!unsafe) return '';
+    
+    const xmlEntities = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&apos;',
+        '\u00A0': '&#160;', // non-breaking space
+        '\u2028': '&#8232;', // line separator
+        '\u2029': '&#8233;'  // paragraph separator
+    };
+
+    return unsafe.replace(/[&<>"'\u00A0\u2028\u2029]/g, char => xmlEntities[char]);
 }
 
 function deactivate() {}
 
 module.exports = {
     activate,
-    deactivate
+    deactivate,
+    formatOutput,
+    formatMarkdown,
+    formatPlainText,
+    formatXML,
+    processContent,
+    removeCodeComments,
+    compressCodeContent,
+    escapeXML
 }
