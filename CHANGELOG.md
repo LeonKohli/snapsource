@@ -2,6 +2,22 @@
 
 All notable changes to the "Copy4AI" extension will be documented in this file.
 
+## [1.0.15] - 2024-02-28
+
+### Added
+- New "Copy Project Structure" command in the context menu
+- Progress indicators for all operations with cancellation support
+- Detailed progress messages during file processing and token counting
+- Better handling of empty directories and error cases in project tree
+- Action button to quickly access settings when token limit is exceeded
+
+### Changed
+- Markdown is now the default output format
+- Refactored and simplified the code structure
+- Improved user experience with better visual feedback during longer operations
+- Enhanced context menu organization with a dedicated group for Copy4AI commands
+- When copying project structure only, the "File Contents" section is now omitted for cleaner output
+
 ## [1.0.14] - 2024-03-26
 
 ### Changed

@@ -104,11 +104,35 @@ async function copyToClipboard(uri, uris, options = {}) {
 
                     // Format the content based on the output format
                     progress.report({ increment: 10, message: "Formatting output..." });
-                    const formattedContent = formatOutput(
-                        outputFormat, 
-                        projectTree, 
-                        options.projectTreeOnly ? [] : processedContent
-                    );
+                    
+                    let formattedContent;
+                    if (options.projectTreeOnly) {
+                        // For project structure only, just format the tree without file contents section
+                        switch (outputFormat) {
+                            case 'markdown':
+                                formattedContent = '# Project Structure\n\n```\n' + projectTree + '```\n';
+                                break;
+                            case 'xml':
+                                formattedContent = '<?xml version="1.0" encoding="UTF-8"?>\n<copy4ai>\n' +
+                                    '  <project_structure>\n' +
+                                    projectTree.split('\n')
+                                        .map(line => '    ' + escapeXML(line))
+                                        .join('\n') +
+                                    '\n  </project_structure>\n</copy4ai>';
+                                break;
+                            case 'plaintext':
+                            default:
+                                formattedContent = 'Project Structure:\n\n' + projectTree + '\n';
+                                break;
+                        }
+                    } else {
+                        // Normal format with both tree and content
+                        formattedContent = formatOutput(
+                            outputFormat, 
+                            projectTree, 
+                            processedContent
+                        );
+                    }
                     
                     // Copy to clipboard and show token count if enabled
                     if (enableTokenCounting && !options.projectTreeOnly) {
@@ -121,30 +145,44 @@ async function copyToClipboard(uri, uris, options = {}) {
                         });
 
                         progress.report({ increment: 5, message: "Copying to clipboard..." });
-                        await vscode.env.clipboard.writeText(formattedContent);
-
-                        let message = `Copied to clipboard: ${outputFormat} format, ${inputTokens} tokens, $${cost.toFixed(4)} est. cost`;
-
-                        if (enableTokenWarning) {
-                            const tokenLimit = maxTokens !== null ? maxTokens : (MODEL_MAX_TOKENS[llmModel] || 0);
-                            if (tokenLimit > 0 && inputTokens > tokenLimit) {
-                                message += `\nWARNING: Token count (${inputTokens}) exceeds the set limit (${tokenLimit}).`;
-                                vscode.window.showWarningMessage(message);
+                        try {
+                            await vscode.env.clipboard.writeText(formattedContent);
+                            
+                            let message = `Copied to clipboard: ${outputFormat} format, ${inputTokens} tokens, $${cost.toFixed(4)} est. cost`;
+    
+                            if (enableTokenWarning) {
+                                const tokenLimit = maxTokens !== null ? maxTokens : (MODEL_MAX_TOKENS[llmModel] || 0);
+                                if (tokenLimit > 0 && inputTokens > tokenLimit) {
+                                    message += `\nWARNING: Token count (${inputTokens}) exceeds the set limit (${tokenLimit}).`;
+                                    vscode.window.showWarningMessage(message, 'OK', 'Reduce Token Count').then(selection => {
+                                        if (selection === 'Reduce Token Count') {
+                                            vscode.commands.executeCommand('workbench.action.openSettings', 'copy4ai.compressCode');
+                                        }
+                                    });
+                                } else {
+                                    vscode.window.showInformationMessage(message);
+                                }
                             } else {
                                 vscode.window.showInformationMessage(message);
                             }
-                        } else {
-                            vscode.window.showInformationMessage(message);
+                        } catch (clipboardError) {
+                            console.error('Clipboard error:', clipboardError);
+                            vscode.window.showErrorMessage(`Failed to copy to clipboard: ${clipboardError.message}`);
                         }
                     } else {
                         progress.report({ increment: 10, message: "Copying to clipboard..." });
-                        await vscode.env.clipboard.writeText(formattedContent);
-                        
-                        const messageText = options.projectTreeOnly ? 
-                            `Project structure copied to clipboard: ${outputFormat} format` :
-                            `Copied to clipboard: ${outputFormat} format`;
-                        
-                        vscode.window.showInformationMessage(messageText);
+                        try {
+                            await vscode.env.clipboard.writeText(formattedContent);
+                            
+                            const messageText = options.projectTreeOnly ? 
+                                `Project structure copied to clipboard: ${outputFormat} format` :
+                                `Copied to clipboard: ${outputFormat} format`;
+                            
+                            vscode.window.showInformationMessage(messageText);
+                        } catch (clipboardError) {
+                            console.error('Clipboard error:', clipboardError);
+                            vscode.window.showErrorMessage(`Failed to copy to clipboard: ${clipboardError.message}`);
+                        }
                     }
                 } else {
                     throw new Error('Unable to determine workspace folder.');
@@ -169,15 +207,26 @@ function activate(context) {
     let copyProjectStructureCommand = vscode.commands.registerCommand(
         'snapsource.copyProjectStructure', 
         async (uri) => {
-            // For project structure, we want to use the workspace root if possible
-            let targetUri = uri;
-            if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
-                targetUri = vscode.workspace.workspaceFolders[0].uri;
+            try {
+                // For project structure, we want to use the workspace root if possible
+                let targetUri = uri;
+                
+                // If no URI was provided or we're not in a workspace, show an error
+                if (!uri && (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0)) {
+                    throw new Error('No workspace open. Please open a workspace to copy project structure.');
+                }
+                
+                // Use workspace root if available and no URI was provided
+                if (!uri && vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+                    targetUri = vscode.workspace.workspaceFolders[0].uri;
+                }
+                
+                return copyToClipboard(targetUri, null, { 
+                    projectTreeOnly: true 
+                });
+            } catch (error) {
+                vscode.window.showErrorMessage(`Error: ${error.message}`);
             }
-            
-            return copyToClipboard(targetUri, null, { 
-                projectTreeOnly: true 
-            });
         }
     );
 
@@ -202,25 +251,56 @@ async function getProjectTree(dir, ig, maxDepth, currentDepth = 0, prefix = '') 
     let result = '';
     try {
         const files = await fs.readdir(dir);
+        
+        // Handle empty directories
+        if (files.length === 0) {
+            result += `${prefix}(empty directory)\n`;
+            return result;
+        }
+        
+        // Process files and directories
+        let visibleFiles = [];
+        
+        // First collect valid files (not ignored)
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
+            const relativePath = path.relative(dir, path.join(dir, file));
+            
+            if (!ig.ignores(relativePath)) {
+                visibleFiles.push(file);
+            }
+        }
+        
+        // If all files are ignored, indicate this
+        if (visibleFiles.length === 0) {
+            result += `${prefix}(all files ignored)\n`;
+            return result;
+        }
+        
+        // Process visible files
+        for (let i = 0; i < visibleFiles.length; i++) {
+            const file = visibleFiles[i];
             const filePath = path.join(dir, file);
-            const relativePath = path.relative(dir, filePath);
             
-            if (ig.ignores(relativePath)) continue;
-
-            const stats = await fs.stat(filePath);
-            const isLast = i === files.length - 1;
-            const branch = isLast ? '└── ' : '├── ';
-            
-            result += `${prefix}${branch}${file}\n`;
-            
-            if (stats.isDirectory()) {
-                result += await getProjectTree(filePath, ig, maxDepth, currentDepth + 1, prefix + (isLast ? '    ' : '│   '));
+            try {
+                const stats = await fs.stat(filePath);
+                const isLast = i === visibleFiles.length - 1;
+                const branch = isLast ? '└── ' : '├── ';
+                
+                result += `${prefix}${branch}${file}\n`;
+                
+                if (stats.isDirectory()) {
+                    result += await getProjectTree(filePath, ig, maxDepth, currentDepth + 1, prefix + (isLast ? '    ' : '│   '));
+                }
+            } catch (error) {
+                // Handle specific error for file/directory access
+                const errorMsg = error.code === 'EACCES' ? '(access denied)' : '(error reading)';
+                result += `${prefix}${file} ${errorMsg}\n`;
             }
         }
     } catch (error) {
         console.error(`Error reading directory ${dir}:`, error);
+        result += `${prefix}(error: ${error.code || 'unknown'})\n`;
     }
     return result;
 }
@@ -387,7 +467,10 @@ function formatXML(projectTree, content) {
 }
 
 function escapeXML(unsafe) {
-    if (!unsafe) return '';
+    if (unsafe === null || unsafe === undefined) return '';
+    
+    // Convert to string if it's not already a string
+    const str = String(unsafe);
     
     const xmlEntities = {
         '&': '&amp;',
@@ -400,7 +483,7 @@ function escapeXML(unsafe) {
         '\u2029': '&#8233;'  // paragraph separator
     };
 
-    return unsafe.replace(/[&<>"'\u00A0\u2028\u2029]/g, char => xmlEntities[char]);
+    return str.replace(/[&<>"'\u00A0\u2028\u2029]/g, char => xmlEntities[char]);
 }
 
 function deactivate() {}
