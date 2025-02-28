@@ -12,7 +12,7 @@
 			"runtimeExecutable": "${execPath}",
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}",
-				"--extensionTestsPath=${workspaceFolder}/test"
+				"--extensionTestsPath=${workspaceFolder}/test/suite/index"
 			],
 			"outFiles": ["${workspaceFolder}/out/test/**/*.js"],
 			"env": {
@@ -24,7 +24,8 @@
 			"type": "extensionHost",
 			"request": "launch",
 			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}"
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"${workspaceFolder}"
 			]
 		}
 	]

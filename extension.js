@@ -16,7 +16,7 @@ const MODEL_MAX_TOKENS = {
 function activate(context) {
     let disposable = vscode.commands.registerCommand('snapsource.copyToClipboard', async (uri, uris) => {
         try {
-            const config = vscode.workspace.getConfiguration('snapsource');
+            const config = vscode.workspace.getConfiguration('copy4ai');
             const ignoreGitIgnore = config.get('ignoreGitIgnore');
             const maxDepth = config.get('maxDepth');
             const excludePatterns = config.get('excludePatterns');
@@ -273,7 +273,7 @@ function formatPlainText(projectTree, content) {
 }
 
 function formatXML(projectTree, content) {
-    let output = '<?xml version="1.0" encoding="UTF-8"?>\n<snapsource>\n';
+    let output = '<?xml version="1.0" encoding="UTF-8"?>\n<copy4ai>\n';
     
     if (projectTree) {
         output += '  <project_structure>\n';
@@ -292,7 +292,7 @@ function formatXML(projectTree, content) {
     });
     output += '  </file_contents>\n';
     
-    output += '</snapsource>';
+    output += '</copy4ai>';
     return output;
 }
 

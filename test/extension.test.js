@@ -243,7 +243,7 @@ suite('Copy4AI Extension Test Suite', () => {
             this.timeout(30000);
             
             // Get the configuration
-            const config = vscode.workspace.getConfiguration('snapsource');
+            const config = vscode.workspace.getConfiguration('copy4ai');
             
             try {
                 // Reset settings first to ensure clean state
@@ -261,7 +261,7 @@ suite('Copy4AI Extension Test Suite', () => {
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 
                 // Get a fresh configuration instance
-                const updatedConfig = vscode.workspace.getConfiguration('snapsource');
+                const updatedConfig = vscode.workspace.getConfiguration('copy4ai');
                 
                 // Verify settings
                 const format = updatedConfig.get('outputFormat');
@@ -277,13 +277,23 @@ suite('Copy4AI Extension Test Suite', () => {
         });
 
         test('Should handle binary files correctly', async () => {
-            const testFilePath = path.join(__dirname, 'testWorkspace', 'test.bin');
+            // Ensure testWorkspace directory exists
+            const testWorkspacePath = path.join(__dirname, 'testWorkspace');
+            await vscode.workspace.fs.createDirectory(vscode.Uri.file(testWorkspacePath));
+            
+            const testFilePath = path.join(testWorkspacePath, 'test.bin');
             const buffer = Buffer.from([0x89, 0x50, 0x4E, 0x47]); // PNG magic number
             
             // Create a binary file
             await vscode.workspace.fs.writeFile(vscode.Uri.file(testFilePath), buffer);
 
             try {
+                // Open the workspace where the file is located
+                await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(testWorkspacePath));
+                
+                // Wait for workspace to open
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
                 const uri = vscode.Uri.file(testFilePath);
                 await vscode.commands.executeCommand('snapsource.copyToClipboard', uri);
                 
@@ -292,18 +302,34 @@ suite('Copy4AI Extension Test Suite', () => {
                     'Should indicate binary file content is not included');
             } finally {
                 // Cleanup
-                await vscode.workspace.fs.delete(vscode.Uri.file(testFilePath));
+                try {
+                    await vscode.workspace.fs.delete(vscode.Uri.file(testFilePath), { recursive: true });
+                } catch (error) {
+                    console.error(`Error cleaning up binary test file: ${error.message}`);
+                }
             }
         });
 
         test('Should handle large files correctly', async () => {
-            const testFilePath = path.join(__dirname, 'testWorkspace', 'large.txt');
+            // Ensure testWorkspace directory exists
+            const testWorkspacePath = path.join(__dirname, 'testWorkspace');
+            await vscode.workspace.fs.createDirectory(vscode.Uri.file(testWorkspacePath));
+            
+            const testFilePath = path.join(testWorkspacePath, 'large.txt');
             const largeContent = 'x'.repeat(2 * 1024 * 1024); // 2MB file
             
             // Create a large file
             await vscode.workspace.fs.writeFile(vscode.Uri.file(testFilePath), Buffer.from(largeContent));
 
             try {
+                // Ensure we're in the right workspace
+                if (!vscode.workspace.workspaceFolders || 
+                    !vscode.workspace.workspaceFolders[0].uri.fsPath.includes('testWorkspace')) {
+                    await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(testWorkspacePath));
+                    // Wait for workspace to open
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
                 const uri = vscode.Uri.file(testFilePath);
                 await vscode.commands.executeCommand('snapsource.copyToClipboard', uri);
                 
@@ -312,11 +338,21 @@ suite('Copy4AI Extension Test Suite', () => {
                     'Should indicate file size exceeds limit');
             } finally {
                 // Cleanup
-                await vscode.workspace.fs.delete(vscode.Uri.file(testFilePath));
+                try {
+                    await vscode.workspace.fs.delete(vscode.Uri.file(testFilePath), { recursive: false });
+                } catch (error) {
+                    console.error(`Error cleaning up large test file: ${error.message}`);
+                }
             }
         });
 
-        test('Should handle multiple file selection', async () => {
+        test('Should handle multiple file selection', async function() {
+            this.timeout(10000); // Increase timeout for this test
+            
+            // Ensure testWorkspace directory exists
+            const testWorkspacePath = path.join(__dirname, 'testWorkspace');
+            await vscode.workspace.fs.createDirectory(vscode.Uri.file(testWorkspacePath));
+            
             const testFiles = [
                 { name: 'test1.txt', content: 'Test content 1' },
                 { name: 'test2.txt', content: 'Test content 2' }
@@ -326,7 +362,7 @@ suite('Copy4AI Extension Test Suite', () => {
             try {
                 // Create test files concurrently
                 await Promise.all(testFiles.map(async (file) => {
-                    const filePath = path.join(__dirname, 'testWorkspace', file.name);
+                    const filePath = path.join(testWorkspacePath, file.name);
                     await vscode.workspace.fs.writeFile(
                         vscode.Uri.file(filePath),
                         Buffer.from(file.content)
@@ -335,26 +371,34 @@ suite('Copy4AI Extension Test Suite', () => {
                 }));
 
                 // Ensure files are written before proceeding
-                await new Promise(resolve => setTimeout(resolve, 100));
+                await new Promise(resolve => setTimeout(resolve, 500));
 
+                // Ensure we're in the right workspace
+                if (!vscode.workspace.workspaceFolders || 
+                    !vscode.workspace.workspaceFolders[0].uri.fsPath.includes('testWorkspace')) {
+                    await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(testWorkspacePath));
+                    // Wait for workspace to open
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                
                 // Test multiple file selection
                 await vscode.commands.executeCommand('snapsource.copyToClipboard', uris[0], uris);
                 
                 // Ensure clipboard is updated before reading
-                await new Promise(resolve => setTimeout(resolve, 100));
+                await new Promise(resolve => setTimeout(resolve, 500));
                 
                 const clipboardContent = await vscode.env.clipboard.readText();
                 assert.ok(clipboardContent.includes('Test content 1'), 'Should include first file content');
                 assert.ok(clipboardContent.includes('Test content 2'), 'Should include second file content');
             } finally {
                 // Cleanup files concurrently
-                await Promise.all(uris.map(async uri => {
-                    try {
+                try {
+                    for (const uri of uris) {
                         await vscode.workspace.fs.delete(uri);
-                    } catch (err) {
-                        console.error(`Error deleting test file: ${err.message}`);
                     }
-                }));
+                } catch (err) {
+                    console.error(`Error cleaning up multiple test files: ${err.message}`);
+                }
             }
         });
     });
