@@ -13,16 +13,25 @@ const MODEL_MAX_TOKENS = {
     "claude-3-opus-20240229": 200000
 };
 
-function activate(context) {
-    let disposable = vscode.commands.registerCommand('snapsource.copyToClipboard', async (uri, uris) => {
+/**
+ * Process files, generate content and copy to clipboard
+ */
+async function copyToClipboard(uri, uris, options = {}) {
+    return vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: "Copy4AI: Processing files...",
+        cancellable: true
+    }, async (progress, token) => {
         try {
+            progress.report({ increment: 0, message: "Initializing..." });
+            
+            // Get configuration
             const config = vscode.workspace.getConfiguration('copy4ai');
             const ignoreGitIgnore = config.get('ignoreGitIgnore');
             const maxDepth = config.get('maxDepth');
             const excludePatterns = config.get('excludePatterns');
             const outputFormat = config.get('outputFormat');
             const maxFileSize = config.get('maxFileSize') || 1024 * 1024; // Default to 1MB
-            const includeProjectTree = config.get('includeProjectTree');
             const compressCode = config.get('compressCode') || false;
             const removeComments = config.get('removeComments') || false;
             const llmModel = config.get('llmModel') || 'gpt-4';
@@ -30,7 +39,16 @@ function activate(context) {
             const enableTokenWarning = config.get('enableTokenWarning');
             const enableTokenCounting = config.get('enableTokenCounting') || false;
 
+            // Override any configs with provided options
+            const includeProjectTree = options.projectTreeOnly ? true : 
+                                       (options.includeProjectTree !== undefined ? 
+                                       options.includeProjectTree : 
+                                       config.get('includeProjectTree'));
+
+            // Determine items to process
             const itemsToProcess = uris && uris.length > 0 ? uris : [uri];
+            
+            progress.report({ increment: 10, message: "Setting up file filters..." });
 
             if (itemsToProcess.length > 0) {
                 const workspaceFolder = vscode.workspace.getWorkspaceFolder(itemsToProcess[0]);
@@ -41,28 +59,68 @@ function activate(context) {
                         await addGitIgnoreRules(workspaceFolder.uri.fsPath, ig);
                     }
 
-                    let projectTree = includeProjectTree ? await getProjectTree(workspaceFolder.uri.fsPath, ig, maxDepth) : '';
+                    // Get project tree if needed
+                    progress.report({ increment: 15, message: "Generating project tree..." });
+                    let projectTree = includeProjectTree ? 
+                        await getProjectTree(workspaceFolder.uri.fsPath, ig, maxDepth) : '';
+                    
                     let processedContent = [];
-
-                    for (const item of itemsToProcess) {
-                        const stats = await fs.stat(item.fsPath);
-                        if (stats.isDirectory()) {
-                            processedContent.push(...await processDirectory(item.fsPath, workspaceFolder.uri.fsPath, ig, maxFileSize, compressCode, removeComments));
-                        } else {
-                            const fileContent = await processFile(item.fsPath, workspaceFolder.uri.fsPath, ig, maxFileSize, compressCode, removeComments);
-                            if (fileContent) processedContent.push(fileContent);
+                    
+                    // For project structure only, skip file processing
+                    if (options.projectTreeOnly) {
+                        progress.report({ increment: 50, message: "Processing complete" });
+                    } else {
+                        progress.report({ increment: 20, message: "Processing files..." });
+                        
+                        // Process each file with progress updates
+                        const totalItems = itemsToProcess.length;
+                        for (let i = 0; i < totalItems; i++) {
+                            if (token.isCancellationRequested) {
+                                throw new Error('Operation cancelled');
+                            }
+                            
+                            const item = itemsToProcess[i];
+                            const progressPercent = Math.floor(20 + ((i / totalItems) * 40));
+                            progress.report({ 
+                                increment: progressPercent / totalItems, 
+                                message: `Processing ${i+1}/${totalItems}: ${path.basename(item.fsPath)}` 
+                            });
+                            
+                            const stats = await fs.stat(item.fsPath);
+                            if (stats.isDirectory()) {
+                                processedContent.push(...await processDirectory(
+                                    item.fsPath, workspaceFolder.uri.fsPath, ig, 
+                                    maxFileSize, compressCode, removeComments
+                                ));
+                            } else {
+                                const fileContent = await processFile(
+                                    item.fsPath, workspaceFolder.uri.fsPath, ig, 
+                                    maxFileSize, compressCode, removeComments
+                                );
+                                if (fileContent) processedContent.push(fileContent);
+                            }
                         }
                     }
 
-                    const formattedContent = formatOutput(outputFormat, projectTree, processedContent);
+                    // Format the content based on the output format
+                    progress.report({ increment: 10, message: "Formatting output..." });
+                    const formattedContent = formatOutput(
+                        outputFormat, 
+                        projectTree, 
+                        options.projectTreeOnly ? [] : processedContent
+                    );
                     
-                    if (enableTokenCounting) {
+                    // Copy to clipboard and show token count if enabled
+                    if (enableTokenCounting && !options.projectTreeOnly) {
+                        progress.report({ increment: 5, message: "Counting tokens..." });
+                        
                         const { inputTokens, cost } = await tokenizeAndEstimateCost({
                             model: llmModel,
                             input: formattedContent,
                             output: ''
                         });
 
+                        progress.report({ increment: 5, message: "Copying to clipboard..." });
                         await vscode.env.clipboard.writeText(formattedContent);
 
                         let message = `Copied to clipboard: ${outputFormat} format, ${inputTokens} tokens, $${cost.toFixed(4)} est. cost`;
@@ -79,8 +137,14 @@ function activate(context) {
                             vscode.window.showInformationMessage(message);
                         }
                     } else {
+                        progress.report({ increment: 10, message: "Copying to clipboard..." });
                         await vscode.env.clipboard.writeText(formattedContent);
-                        vscode.window.showInformationMessage(`Copied to clipboard: ${outputFormat} format`);
+                        
+                        const messageText = options.projectTreeOnly ? 
+                            `Project structure copied to clipboard: ${outputFormat} format` :
+                            `Copied to clipboard: ${outputFormat} format`;
+                        
+                        vscode.window.showInformationMessage(messageText);
                     }
                 } else {
                     throw new Error('Unable to determine workspace folder.');
@@ -92,8 +156,34 @@ function activate(context) {
             vscode.window.showErrorMessage(`Error: ${error.message}`);
         }
     });
+}
 
-    context.subscriptions.push(disposable);
+function activate(context) {
+    // Register command for copying files and their content to clipboard
+    let copyToClipboardCommand = vscode.commands.registerCommand(
+        'snapsource.copyToClipboard', 
+        async (uri, uris) => copyToClipboard(uri, uris)
+    );
+    
+    // Register command for copying only the project structure
+    let copyProjectStructureCommand = vscode.commands.registerCommand(
+        'snapsource.copyProjectStructure', 
+        async (uri) => {
+            // For project structure, we want to use the workspace root if possible
+            let targetUri = uri;
+            if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+                targetUri = vscode.workspace.workspaceFolders[0].uri;
+            }
+            
+            return copyToClipboard(targetUri, null, { 
+                projectTreeOnly: true 
+            });
+        }
+    );
+
+    // Add commands to subscriptions
+    context.subscriptions.push(copyToClipboardCommand);
+    context.subscriptions.push(copyProjectStructureCommand);
 }
 
 async function addGitIgnoreRules(rootPath, ig) {

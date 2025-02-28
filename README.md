@@ -23,9 +23,13 @@ Copy4AI (formerly SnapSource) is a powerful Visual Studio Code extension that al
 ## 🔧 How to Use
 
 1. Select one or multiple files or folders in the VS Code Explorer.
-2. Right-click and select "Copy to Clipboard (Copy4AI)" from the context menu.
-3. The file/folder content(s) and project tree (if enabled) will be copied to your clipboard, excluding dot files, binary files, and respecting ignore patterns and size limits.
+2. Right-click and select one of the following options:
+   - **Copy to Clipboard (Copy4AI)**: Copies the selected files/folders with their content
+   - **Copy Project Structure (Copy4AI)**: Copies only the project tree structure
+3. The content will be copied to your clipboard, excluding dot files, binary files, and respecting ignore patterns and size limits.
 4. Paste the content into your preferred LLM interface.
+
+A progress indicator will show the status of the operation, especially useful for large files or when token counting is enabled.
 
 ## ⚙️ Extension Settings
 
@@ -36,7 +40,7 @@ This extension contributes the following settings:
 | `copy4ai.ignoreGitIgnore` | Respect .gitignore rules when generating the project tree and copying files | `true` |
 | `copy4ai.maxDepth` | Maximum depth of the project tree | `5` |
 | `copy4ai.excludePatterns` | Additional patterns to exclude from the project tree and file copying | `["node_modules", "*.log"]` |
-| `copy4ai.outputFormat` | Output format for the copied content (options: "plaintext", "markdown", "xml") | `"plaintext"` |
+| `copy4ai.outputFormat` | Output format for the copied content (options: "plaintext", "markdown", "xml") | `"markdown"` |
 | `copy4ai.maxFileSize` | Maximum file size (in bytes) to include in the output | `1048576` (1MB) |
 | `copy4ai.includeProjectTree` | Include the project tree structure in the output | `true` |
 | `copy4ai.compressCode` | Remove extra whitespace and empty lines from code when copying | `false` |
